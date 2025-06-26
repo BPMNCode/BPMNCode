@@ -143,7 +143,7 @@ process OrderFlow {
 }
 ```
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run all tests
