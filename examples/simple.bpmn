@@ -1,0 +1,7 @@
+process SimpleOrder {
+    start
+    task ReceiveOrder
+    task ValidatePayment
+    task ShipProduct
+    end
+}

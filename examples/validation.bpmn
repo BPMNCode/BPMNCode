@@ -1,0 +1,16 @@
+subprocess ValidateOrder {
+    task CheckInventory
+    task ValidateCustomerData
+    task VerifyPaymentMethod
+    
+    and ValidationGateway {
+        inventory_ok -> continue
+        customer_ok -> continue  
+        payment_ok -> continue
+    }
+    
+    and continue -> xor AllChecksPass? {
+        yes -> end
+        no -> error @message "ValidationFailed"
+    }
+}

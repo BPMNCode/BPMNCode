@@ -1,0 +1,31 @@
+process ComplexOrder @version "2.0" @author "Business Analyst" {
+    start @message "OrderReceived"
+    
+    task ValidateOrder (timeout=5m assignee="validator")
+    
+    xor OrderValid? {
+        [validation_result == "valid"] -> ProcessOrder
+        [validation_result == "invalid"] -> RejectOrder
+        => ReviewManually  // default case
+    }
+    
+    ProcessOrder -> and PrepareShipment {
+        branch1 -> task PackItems (assignee="warehouse")
+        branch2 -> service GenerateInvoice (endpoint="/api/invoice")
+        branch3 -> user NotifyCustomer (priority=high)
+    }
+    
+    // Synchronization
+    PackItems -> join ReadyToShip
+    GenerateInvoice -> join ReadyToShip  
+    NotifyCustomer -> join ReadyToShip
+    
+    and ReadyToShip -> task ShipOrder
+    
+    // Timer event
+    ShipOrder -> event timer 24h -> task FollowUp
+    
+    FollowUp -> end @message "OrderCompleted"
+    RejectOrder -> end @error "OrderRejected"
+    ReviewManually -> user ManualReview -> ProcessOrder
+}

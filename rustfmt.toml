@@ -1,0 +1,39 @@
+edition = "2024"
+max_width = 100
+hard_tabs = false
+tab_spaces = 4
+
+imports_granularity = "Crate"
+group_imports = "StdExternalCrate"
+reorder_imports = true
+
+comment_width = 80
+wrap_comments = true
+normalize_comments = true
+
+string_lit_normalize_whitespace = false
+
+fn_single_line = false
+where_single_line = false
+force_explicit_abi = true
+
+control_brace_style = "AlwaysSameLine"
+brace_style = "SameLineWhere"
+
+array_width = 60
+struct_lit_width = 18
+struct_variant_width = 35
+
+chain_width = 60
+single_line_if_else_max_width = 50
+
+trailing_comma = "Vertical"
+trailing_semicolon = true
+
+spaces_around_ranges = false
+type_punctuation_density = "Wide"
+
+format_macro_matchers = true
+format_macro_bodies = true
+
+module_recursion_limit = 128
