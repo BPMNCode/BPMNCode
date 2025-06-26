@@ -6,10 +6,7 @@ use std::{
 
 use thiserror::Error;
 
-use crate::{
-    error::LexerError,
-    lexer::{Lexer, Token},
-};
+use crate::lexer::{Lexer, Token, error::LexerError};
 
 pub struct MultiFileLexer {
     file_cache: HashMap<PathBuf, String>,

@@ -224,12 +224,13 @@ mod tests {
         let mut lexer = Lexer::new(input, "pools.bpmn");
         let tokens = lexer.tokenize();
 
-        let pool_tokens: Vec<_> = tokens
-            .iter()
-            .filter(|t| matches!(t.kind, TokenKind::Pool | TokenKind::Lane))
-            .collect();
-
-        assert_eq!(pool_tokens.len(), 3); // 1 pool + 2 lanes
+        assert_eq!(
+            tokens
+                .iter()
+                .filter(|t| matches!(t.kind, TokenKind::Pool | TokenKind::Lane))
+                .count(),
+            3
+        ); // 1 pool + 2 lanes
     }
 
     #[test]
@@ -245,17 +246,18 @@ mod tests {
         let tokens = lexer.tokenize();
 
         // Проверяем атрибуты
-        let at_tokens: Vec<_> = tokens.iter().filter(|t| t.kind == TokenKind::At).collect();
 
-        assert_eq!(at_tokens.len(), 2); // @version и @author
+        assert_eq!(tokens.iter().filter(|t| t.kind == TokenKind::At).count(), 2); // @version и @author
 
         // Проверяем скобки для параметров
-        let paren_tokens: Vec<_> = tokens
-            .iter()
-            .filter(|t| matches!(t.kind, TokenKind::LeftParen | TokenKind::RightParen))
-            .collect();
 
-        assert_eq!(paren_tokens.len(), 2); // ( и )
+        assert_eq!(
+            tokens
+                .iter()
+                .filter(|t| matches!(t.kind, TokenKind::LeftParen | TokenKind::RightParen))
+                .count(),
+            2
+        ); // ( и )
     }
 
     #[test]
@@ -297,12 +299,8 @@ mod tests {
         let tokens = lexer.tokenize();
 
         // Лексер должен продолжить работу даже с неизвестными символами
-        let unknown_tokens: Vec<_> = tokens
-            .iter()
-            .filter(|t| t.kind == TokenKind::Unknown)
-            .collect();
 
-        assert!(!unknown_tokens.is_empty());
+        assert!(tokens.iter().any(|t| t.kind == TokenKind::Unknown));
 
         // Но валидные токены должны быть распознаны
         assert!(tokens.iter().any(|t| t.kind == TokenKind::Task));
@@ -353,12 +351,14 @@ xor PaymentValid? {
         let tokens = lexer.tokenize();
 
         // Проверяем что сложные выражения токенизируются
-        let brackets: Vec<_> = tokens
-            .iter()
-            .filter(|t| matches!(t.kind, TokenKind::LeftBracket | TokenKind::RightBracket))
-            .collect();
 
-        assert_eq!(brackets.len(), 4); // 2 условия в квадратных скобках
+        assert_eq!(
+            tokens
+                .iter()
+                .filter(|t| matches!(t.kind, TokenKind::LeftBracket | TokenKind::RightBracket))
+                .count(),
+            4
+        ); // 2 условия в квадратных скобках
     }
 
     #[test]
@@ -381,17 +381,18 @@ xor PaymentValid? {
         let mut lexer = Lexer::new(input, "comments.bpmn");
         let tokens = lexer.tokenize();
 
-        let non_whitespace: Vec<_> = tokens
-            .iter()
-            .filter(|t| {
-                !matches!(
-                    t.kind,
-                    TokenKind::Newline | TokenKind::CarriageReturnNewline
-                )
-            })
-            .collect();
-
-        assert_eq!(non_whitespace.len(), 3); // 2 comments + EOF
+        assert_eq!(
+            tokens
+                .iter()
+                .filter(|t| {
+                    !matches!(
+                        t.kind,
+                        TokenKind::Newline | TokenKind::CarriageReturnNewline
+                    )
+                })
+                .count(),
+            3
+        ); // 2 comments + EOF
     }
 }
 
@@ -441,11 +442,12 @@ mod multi_file_tests {
         assert!(tokens.iter().any(|t| t.kind == TokenKind::Call));
 
         // Проверяем что файлы правильно отслеживаются
-        let main_tokens: Vec<_> = tokens
-            .iter()
-            .filter(|t| t.span.file.file_name().unwrap() == "main.bpmn")
-            .collect();
-        assert!(!main_tokens.is_empty());
+
+        assert!(
+            tokens
+                .iter()
+                .any(|t| t.span.file.file_name().unwrap() == "main.bpmn")
+        );
     }
 
     #[test]

@@ -1,5 +1,6 @@
-use bpmncode::lexer::TokenKind;
 use bpmncode::lexer::multi_file::MultiFileLexer;
+use bpmncode::parser::ast::ProcessElement;
+use bpmncode::parser::parse_tokens;
 use clap::{Parser, Subcommand, ValueEnum};
 use colored::Colorize;
 use std::path::PathBuf;
@@ -99,53 +100,64 @@ fn check_command(
         let base_dir = std::env::current_dir()?;
         let mut lexer = MultiFileLexer::new(base_dir);
         let tokens = lexer.tokenize_file(&input)?;
+        let ast = parse_tokens(tokens);
 
-        for token in tokens.clone() {
-            println!("{token:?}");
+        if verbose {
+            println!("{} AST structure:", "Debug:".yellow().bold());
+            print_ast_summary(&ast);
         }
 
-        let errors: Vec<_> = tokens
-            .iter()
-            .filter(|token| matches!(token.kind, TokenKind::Unknown))
-            .collect();
+        let parser_errors = ast.errors.len();
 
-        total_errors += errors.len();
+        total_errors += parser_errors;
 
         match format {
             DiagnosticFormat::Human => {
-                if errors.is_empty() {
+                if ast.errors.is_empty() {
                     println!("{} {} - no issues found", "✓".green(), input.display());
+
+                    if verbose {
+                        println!("  {} processes: {}", "📊".blue(), ast.processes.len());
+                        println!("  {} imports: {}", "📦".blue(), ast.imports.len());
+
+                        for process in &ast.processes {
+                            println!(
+                                "  {} '{}' has {} elements",
+                                "🔄".blue(),
+                                process.name,
+                                process.elements.len()
+                            );
+                        }
+                    }
                 } else {
                     println!(
                         "{} {} - {} errors found",
                         "✗".red(),
                         input.display(),
-                        errors.len()
+                        ast.errors.len()
                     );
 
-                    for error in errors {
+                    for error in &ast.errors {
                         println!(
-                            "  {} {}:{}:{} Unknown token '{}'",
+                            "  {} {}:{}:{} {}",
                             "error:".red().bold(),
                             error.span.file.display(),
                             error.span.line,
                             error.span.column,
-                            error.text
+                            error.message
                         );
                     }
                 }
             }
             DiagnosticFormat::Short => {
-                if !errors.is_empty() {
-                    for error in errors {
-                        println!(
-                            "{}:{}:{}: error: Unknown token '{}'",
-                            error.span.file.display(),
-                            error.span.line,
-                            error.span.column,
-                            error.text
-                        );
-                    }
+                for error in &ast.errors {
+                    println!(
+                        "{}:{}:{}: error: {}",
+                        error.span.file.display(),
+                        error.span.line,
+                        error.span.column,
+                        error.message
+                    );
                 }
             }
         }
@@ -159,6 +171,63 @@ fn check_command(
     }
 
     Ok(())
+}
+
+fn print_ast_summary(ast: &bpmncode::parser::ast::AstDocument) {
+    println!("  📄 Imports: {}", ast.imports.len());
+    for import in &ast.imports {
+        if let Some(alias) = &import.alias {
+            println!("    - {} as {}", import.path, alias);
+        } else {
+            println!("    - {} (items: {})", import.path, import.items.join(", "));
+        }
+    }
+
+    println!("  🔄 Processes: {}", ast.processes.len());
+    for process in &ast.processes {
+        println!(
+            "    - {} ({} elements, {} flows)",
+            process.name,
+            process.elements.len(),
+            process.flows.len()
+        );
+
+        let mut element_counts = std::collections::HashMap::new();
+        for element in &process.elements {
+            let element_type = match element {
+                ProcessElement::StartEvent { .. } => "start",
+                ProcessElement::EndEvent { .. } => "end",
+                ProcessElement::Task { task_type, .. } => match task_type {
+                    bpmncode::parser::ast::TaskType::Generic => "task",
+                    bpmncode::parser::ast::TaskType::User => "user",
+                    bpmncode::parser::ast::TaskType::Service => "service",
+                    bpmncode::parser::ast::TaskType::Script => "script",
+                },
+                ProcessElement::Gateway { gateway_type, .. } => match gateway_type {
+                    bpmncode::parser::ast::GatewayType::Exclusive => "xor",
+                    bpmncode::parser::ast::GatewayType::Parallel => "and",
+                },
+                ProcessElement::IntermediateEvent { .. } => "event",
+                ProcessElement::Subprocess { .. } => "subprocess",
+                ProcessElement::CallActivity { .. } => "call",
+                ProcessElement::Pool { .. } => "pool",
+                ProcessElement::Group { .. } => "group",
+                ProcessElement::Annotation { .. } => "note",
+            };
+            *element_counts.entry(element_type).or_insert(0) += 1;
+        }
+
+        for (element_type, count) in element_counts {
+            println!("      {} {}: {}", "•".blue(), element_type, count);
+        }
+    }
+
+    if !ast.errors.is_empty() {
+        println!("  ❌ Errors: {}", ast.errors.len());
+        for error in &ast.errors {
+            println!("    - {}", error.message);
+        }
+    }
 }
 
 fn info_command(version: bool, syntax: bool, examples: bool) {

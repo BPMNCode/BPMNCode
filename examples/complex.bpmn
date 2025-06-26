@@ -6,26 +6,31 @@ process ComplexOrder @version "2.0" @author "Business Analyst" {
     xor OrderValid? {
         [validation_result == "valid"] -> ProcessOrder
         [validation_result == "invalid"] -> RejectOrder
-        => ReviewManually  // default case
+        => ReviewManually
     }
     
-    ProcessOrder -> and PrepareShipment {
-        branch1 -> task PackItems (assignee="warehouse")
-        branch2 -> service GenerateInvoice (endpoint="/api/invoice")
-        branch3 -> user NotifyCustomer (priority=high)
-    }
+    task ProcessOrder
+    task RejectOrder
+    task PackItems (assignee="warehouse")
+    service GenerateInvoice (endpoint="/api/invoice")
+    user NotifyCustomer (priority=high)
     
-    // Synchronization
-    PackItems -> join ReadyToShip
-    GenerateInvoice -> join ReadyToShip  
-    NotifyCustomer -> join ReadyToShip
+    task ShipOrder
+    task FollowUp
     
-    and ReadyToShip -> task ShipOrder
+    end @message "OrderCompleted"
+    user ManualReview
     
-    // Timer event
-    ShipOrder -> event timer 24h -> task FollowUp
-    
-    FollowUp -> end @message "OrderCompleted"
-    RejectOrder -> end @error "OrderRejected"
-    ReviewManually -> user ManualReview -> ProcessOrder
+    // Flows
+    ProcessOrder -> PackItems
+    ProcessOrder -> GenerateInvoice
+    ProcessOrder -> NotifyCustomer
+    PackItems -> ShipOrder
+    GenerateInvoice -> ShipOrder
+    NotifyCustomer -> ShipOrder
+    ShipOrder -> FollowUp
+    FollowUp -> end
+    RejectOrder -> end
+    ReviewManually -> ManualReview
+    ManualReview -> ProcessOrder
 }
