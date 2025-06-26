@@ -1,8 +1,10 @@
 subprocess ProcessPayment {
     task ChargeCard
     xor PaymentSuccess? {
-        yes -> task SendReceipt
-        no -> task RefundOrder
+        yes -> SendReceipt
+        no -> RefundOrder
     }
+    task SendReceipt
+    task RefundOrder
     end
 }

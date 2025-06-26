@@ -1,3 +1,4 @@
+pub mod error;
 pub mod multi_file;
 
 use std::{
