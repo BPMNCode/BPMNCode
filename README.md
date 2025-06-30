@@ -68,7 +68,7 @@ import "flows/payment.bpmn" as payment
 import "common/validators.bpmn" as validators
 
 // Import specific elements
-import subprocess PaymentFlow, DataValidation from "flows/common.bpmn"
+import PaymentFlow, DataValidation from "flows/common.bpmn"
 
 process MainFlow {
     start
@@ -82,9 +82,9 @@ process MainFlow {
 #### Task Attributes
 
 ```
-task ValidateOrder (async=true retries=3 timeout=30s)
-user SignContract (assignee="manager" priority=high)
-service CallAPI (endpoint="https://api.example.com")
+task ValidateOrder(async=true, retries=3, timeout=30s)
+user SignContract(assignee="manager", priority=high)
+service CallAPI(endpoint="https://api.example.com")
 ```
 
 #### Annotations

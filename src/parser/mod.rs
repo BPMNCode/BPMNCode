@@ -10,6 +10,7 @@ use crate::{
         },
         error::ParserError,
         recovery::ErrorRecovery,
+        validator::validate_syntax,
     },
 };
 
@@ -17,6 +18,7 @@ pub mod ast;
 pub mod builder;
 pub mod error;
 pub mod recovery;
+pub mod validator;
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -193,6 +195,16 @@ impl Parser {
         document
     }
 
+    pub fn parse_with_validation(&mut self) -> AstDocument {
+        let mut document = self.parse();
+
+        if let Err(syntax_errors) = validate_syntax(&document) {
+            document.errors.extend(syntax_errors);
+        }
+
+        document
+    }
+
     fn parse_import(&mut self) -> Result<ImportDeclaration, Box<ParserError>> {
         let start_span = self.current_span();
 
@@ -258,12 +270,18 @@ impl Parser {
         self.skip_whitespace_and_comments();
 
         while !self.check_token(&TokenKind::RightBrace) && !self.is_at_end() {
+            let current_pos = self.position;
+            
             if let Ok(element) = self.parse_process_element() {
                 elements.push(element);
-            } else if let Ok(flow) = self.parse_flow() {
-                flows.push(flow);
             } else {
-                self.advance();
+                self.position = current_pos;
+                if let Ok(flow) = self.parse_flow() {
+                    flows.push(flow);
+                } else {
+                    self.position = current_pos;
+                    self.advance();
+                }
             }
 
             self.skip_whitespace_and_comments();
@@ -640,17 +658,18 @@ impl Parser {
                 (Some(cond), false)
             };
 
-            if !self.check_token(&TokenKind::SequenceFlow)
-                && !self.check_token(&TokenKind::DefaultFlow)
-            {
-                return Err(Box::new(ParserError::UnexpectedToken {
-                    found: self.current_token().text,
-                    expected: "-> or =>".to_string(),
-                    span: self.current_span(),
-                }));
+            if !is_default {
+                if !self.check_token(&TokenKind::SequenceFlow)
+                    && !self.check_token(&TokenKind::DefaultFlow)
+                {
+                    return Err(Box::new(ParserError::UnexpectedToken {
+                        found: self.current_token().text,
+                        expected: "-> or =>".to_string(),
+                        span: self.current_span(),
+                    }));
+                }
+                self.advance();
             }
-
-            self.advance();
 
             let target = self.parse_identifier()?;
 
@@ -1005,4 +1024,10 @@ pub fn parse_tokens(tokens: Vec<Token>) -> AstDocument {
     let mut parser = Parser::new(tokens);
 
     parser.parse_with_recovery()
+}
+
+#[must_use]
+pub fn parse_tokens_with_validation(tokens: Vec<Token>) -> AstDocument {
+    let mut parser = Parser::new(tokens);
+    parser.parse_with_validation()
 }

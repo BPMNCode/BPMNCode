@@ -1,0 +1,119 @@
+// Comprehensive BPMN 2.0 example demonstrating all supported elements
+import "common.bpmn" as common
+import ProcessA, ProcessB from "external.bpmn"
+
+process ComprehensiveOrderProcess @version "3.0" @author "BPMN Expert" @description "Complete demonstration" {
+    // Start Events  
+    start @message "OrderReceived"
+    start @timer "daily"
+    
+    // Tasks of different types
+    task ValidateOrder(timeout=300s, assignee="validator", priority=high)
+    user ReviewOrder(assignee="manager", form="order-review", required=true)
+    service CalculatePrice(endpoint="/api/pricing", method="POST", timeout=30s)
+    script UpdateDatabase(script="update_order.sql", params="order_id,status")
+    
+    // Call Activities (external processes)
+    call PaymentProcess(process="PaymentFlow")
+    call ShippingProcess(process="ShippingFlow")
+    
+    // Gateways
+    xor OrderType? {
+        [order_type == "standard"] -> StandardPath
+        [order_type == "express"] -> ExpressPath
+        [order_type == "bulk"] -> BulkPath
+        => DefaultPath
+    }
+    
+    and ParallelSplit {
+        [split] -> InventoryCheck
+        [split] -> CreditCheck  
+        [split] -> ComplianceCheck
+    }
+    
+    and ParallelJoin {
+        [join] -> ProcessOrder
+    }
+    
+    // Intermediate Events
+    event WaitForPayment @message "PaymentConfirmed"
+    event ErrorHandler @error "ProcessingError"
+    event SignalCatcher @signal "ManagerApproval"
+    
+    // Subprocess
+    subprocess OrderFulfillment(collapsed=false) {
+        start
+        task PickItems(assignee="warehouse")
+        task PackItems(parallel=true)
+        task LabelPackage
+        end @message "OrderFulfilled"
+    }
+    
+    // Pools and Lanes
+    pool Customer {
+        lane OnlineCustomer {
+            task PlaceOrder
+            task ConfirmOrder
+            user ProvidePayment(secure=true)
+        }
+        
+        lane PremiumCustomer {
+            task ExpressOrder(priority=urgent)
+            service AutoApproval(instant=true)
+        }
+    }
+    
+    pool Supplier {
+        task CheckAvailability
+        service UpdateInventory(realtime=true)
+        event NotifyDelay @timer "2h"
+    }
+    
+    // Groups for organization
+    group "ValidationGroup" {
+        task ValidateOrder2
+        task ReviewOrder2
+        user ManagerApproval(escalation=true)
+    }
+    
+    group "FulfillmentGroup" {
+        task FulfillmentTask
+        task ShippingTask
+    }
+    
+    // End Events
+    end @message "OrderCompleted"
+    end @error "ValidationFailed"
+    end @terminate "ProcessCancelled"
+    
+    // Annotations for documentation
+    note "This process handles complex order scenarios"
+    note "SLA: 4 hours, Success rate: 95%"
+    
+    // Sequence Flows
+    ValidateOrder -> ReviewOrder
+    ReviewOrder -> CalculatePrice
+    CalculatePrice -> OrderFulfillment
+    OrderFulfillment -> end
+}
+
+// Second process demonstrating imports and references
+process QuickOrder {
+    start
+    
+    call ComprehensiveOrderProcess(simplified=true)
+    
+    xor QuickDecision {
+        [amount < 100] -> AutoApprove
+        => ManualReview  
+    }
+    
+    task AutoApprove(automated=true)
+    user ManualReview(timeout=1h)
+    
+    end
+    
+    // Simple flows
+    AutoApprove -> end
+    ManualReview -> end
+}

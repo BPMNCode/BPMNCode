@@ -1,25 +1,25 @@
 process ComplexOrder @version "2.0" @author "Business Analyst" {
     start @message "OrderReceived"
     
-    task ValidateOrder (timeout=5m assignee="validator")
+    task ValidateOrder(timeout=5m, assignee="validator")
+    task ProcessOrder
+    task RejectOrder
+    task PackItems(assignee="warehouse")
+    task ShipOrder
+    task FollowUp
+
+    service GenerateInvoice(endpoint="/api/invoice")
+
+    user NotifyCustomer(priority=high)
+    user ManualReview
+
+    end @message "OrderCompleted"
     
     xor OrderValid? {
         [validation_result == "valid"] -> ProcessOrder
         [validation_result == "invalid"] -> RejectOrder
-        => ReviewManually
+        => ManualReview
     }
-    
-    task ProcessOrder
-    task RejectOrder
-    task PackItems (assignee="warehouse")
-    service GenerateInvoice (endpoint="/api/invoice")
-    user NotifyCustomer (priority=high)
-    
-    task ShipOrder
-    task FollowUp
-    
-    end @message "OrderCompleted"
-    user ManualReview
     
     // Flows
     ProcessOrder -> PackItems
@@ -31,6 +31,5 @@ process ComplexOrder @version "2.0" @author "Business Analyst" {
     ShipOrder -> FollowUp
     FollowUp -> end
     RejectOrder -> end
-    ReviewManually -> ManualReview
     ManualReview -> ProcessOrder
 }

@@ -1,6 +1,6 @@
 use bpmncode::lexer::multi_file::MultiFileLexer;
 use bpmncode::parser::ast::ProcessElement;
-use bpmncode::parser::parse_tokens;
+use bpmncode::parser::parse_tokens_with_validation;
 use clap::{Parser, Subcommand, ValueEnum};
 use colored::Colorize;
 use std::path::PathBuf;
@@ -22,10 +22,6 @@ enum Commands {
         /// Input BPMN source file(s)
         #[arg(value_name = "INPUT")]
         input: Vec<PathBuf>,
-
-        /// Check all imported files recursively
-        #[arg(short, long)]
-        recursive: bool,
 
         /// Show detailed error information
         #[arg(short, long)]
@@ -65,7 +61,6 @@ fn main() {
     let result = match cli.command {
         Commands::Check {
             input,
-            recursive: _,
             verbose,
             format,
         } => check_command(input, verbose, &format),
@@ -100,7 +95,7 @@ fn check_command(
         let base_dir = std::env::current_dir()?;
         let mut lexer = MultiFileLexer::new(base_dir);
         let tokens = lexer.tokenize_file(&input)?;
-        let ast = parse_tokens(tokens);
+        let ast = parse_tokens_with_validation(tokens);
 
         if verbose {
             println!("{} AST structure:", "Debug:".yellow().bold());
