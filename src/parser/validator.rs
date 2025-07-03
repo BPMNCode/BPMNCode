@@ -175,6 +175,7 @@ impl SyntaxValidator {
         }
     }
 
+    #[allow(clippy::unused_self)]
     fn is_valid_sequence_flow(
         &self,
         from: &str,
@@ -188,14 +189,17 @@ impl SyntaxValidator {
         true
     }
 
+    #[allow(clippy::unused_self)]
     const fn is_valid_message_flow(&self, _from: &str, _to: &str) -> bool {
         true
     }
 
+    #[allow(clippy::unused_self)]
     fn is_valid_default_flow(&self, from: &str, node_ids: &HashMap<String, Span>) -> bool {
         node_ids.contains_key(from) || from == "start"
     }
 
+    #[allow(clippy::unused_self)]
     const fn is_valid_association(&self, _from: &str, _to: &str) -> bool {
         true
     }

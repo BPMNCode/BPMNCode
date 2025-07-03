@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use thiserror::Error;
 
+pub mod context_validator;
 pub mod formatter;
 pub mod suggestions;
 

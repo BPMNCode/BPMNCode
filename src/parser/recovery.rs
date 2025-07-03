@@ -260,6 +260,8 @@ impl ErrorRecovery {
         Some((branch, pos))
     }
 
+    #[allow(clippy::needless_pass_by_ref_mut)]
+    #[allow(clippy::unused_self)]
     fn skip_malformed_attributes(&mut self, tokens: &[Token], start_pos: usize) -> usize {
         let mut pos = start_pos;
 

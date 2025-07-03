@@ -1,3 +1,4 @@
+use bpmncode::diagnostics::context_validator::ContextValidator;
 use bpmncode::diagnostics::formatter::DiagnosticFormatter;
 use bpmncode::diagnostics::suggestions::{suggest_identifiers, suggest_keywords};
 use bpmncode::diagnostics::{DiagnosticError, DiagnosticReport, Severity};
@@ -114,11 +115,19 @@ fn check_command(
 
     for input in inputs {
         let source_code = fs::read_to_string(&input)?;
-        let mut report = DiagnosticReport::new(input.display().to_string(), source_code);
+        let mut report = DiagnosticReport::new(input.display().to_string(), source_code.clone());
 
         let base_dir = std::env::current_dir()?;
         let mut lexer = MultiFileLexer::new(base_dir);
         let tokens = lexer.tokenize_file(&input)?;
+        
+        // Context validation on tokens (catch typos and syntax errors)
+        let mut context_validator = ContextValidator::new(source_code.clone());
+        let context_errors = context_validator.validate_tokens(&tokens);
+        for error in context_errors {
+            report.add_error(error);
+        }
+
         let ast = parse_tokens_with_validation(tokens);
 
         for error in &ast.errors {

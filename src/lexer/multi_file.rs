@@ -22,7 +22,7 @@ impl MultiFileLexer {
     }
 
     pub fn tokenize_file(&mut self, file_path: &Path) -> Result<Vec<Token>, MultiFileError> {
-        let resolved_path = self.resolve_path(&file_path);
+        let resolved_path = self.resolve_path(file_path);
 
         self.tokenize_file_recursive(&resolved_path)
     }

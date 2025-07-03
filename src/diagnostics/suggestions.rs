@@ -103,3 +103,31 @@ pub fn suggest_identifiers(target: &str, identifiers: &[String]) -> Vec<String> 
         .collect();
     suggest_similar(target, &candidates, 3)
 }
+
+#[must_use]
+pub fn detect_keyword_typo(target: &str) -> Option<String> {
+    let suggestions = suggest_keywords(target);
+    if !suggestions.is_empty() && jaro_winkler(target, &suggestions[0]) > 0.75 {
+        Some(suggestions[0].clone())
+    } else {
+        None
+    }
+}
+
+#[must_use]
+pub fn detect_event_type_typo(target: &str) -> Option<String> {
+    let suggestions = suggest_event_types(target);
+    if !suggestions.is_empty() && jaro_winkler(target, &suggestions[0]) > 0.75 {
+        Some(suggestions[0].clone())
+    } else {
+        None
+    }
+}
+
+#[must_use]
+pub fn is_likely_keyword_typo(target: &str) -> bool {
+    BPMN_KEYWORDS.iter().any(|keyword| {
+        let similarity = jaro_winkler(target, keyword);
+        similarity > 0.6 && similarity < 1.0
+    })
+}
