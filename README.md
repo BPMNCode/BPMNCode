@@ -4,6 +4,20 @@ A modern textual DSL (Domain Specific Language) for describing BPMN 2.0 processe
 
 ## Installation
 
+### Quick Install
+```bash
+# Linux/macOS
+curl -sSL https://install.bpmncode.com | bash
+
+# Windows (PowerShell)
+iwr -useb https://install.bpmncode.com/windows | iex
+```
+
+### Manual Install
+Download from [releases](https://github.com/BPMNCode/BPMNCode/releases)
+
+### From source
+
 ```bash
 # Clone the repository
 git clone git@github.com:BPMNCode/BPMNCode.git

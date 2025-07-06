@@ -14,7 +14,7 @@ use std::process;
 #[derive(Parser)]
 #[command(name = "BPMNCode")]
 #[command(about = "A textual DSL for BPMN 2.0 processes")]
-#[command(version = "0.1.0")]
+#[command(version = "0.1.2")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
