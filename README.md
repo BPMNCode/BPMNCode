@@ -7,10 +7,10 @@ A modern textual DSL (Domain Specific Language) for describing BPMN 2.0 processe
 ### Quick Install
 ```bash
 # Linux/macOS
-curl -sSL https://install.bpmncode.com | bash
+curl -sSL https://raw.githubusercontent.com/BPMNCode/BPMNCode/refs/heads/master/install.sh | bash
 
 # Windows (PowerShell)
-iwr -useb https://install.bpmncode.com/windows | iex
+iwr -useb https://raw.githubusercontent.com/BPMNCode/BPMNCode/refs/heads/master/install.ps1 | iex
 ```
 
 ### Manual Install
